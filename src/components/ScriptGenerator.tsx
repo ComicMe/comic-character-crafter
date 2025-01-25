@@ -258,7 +258,7 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters, onGenerat
               )}
             </Droppable>
           </DragDropContext>
-        </div>
+        </Card>
       )}
     </div>
   );
