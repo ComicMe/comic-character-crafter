@@ -4,9 +4,12 @@ import { Card } from './ui/card';
 import { toast } from 'sonner';
 import { Loader2, Plus } from 'lucide-react';
 import { Character } from '@/types/character';
+import { ComicSettings, ComicState, ComicPage } from '@/types/comic';
 import ScriptThemeInput from './script/ScriptThemeInput';
 import CharacterSelection from './script/CharacterSelection';
 import PanelList from './script/PanelList';
+import ComicSettings from './comic/ComicSettings';
+import ComicPreview from './comic/ComicPreview';
 import { RunwareService } from '@/services/runware';
 
 interface Panel {
@@ -15,6 +18,7 @@ interface Panel {
   dialogue: string;
   characters: string[];
   generatedImage?: string;
+  dialogueSize?: number;
 }
 
 interface Script {
@@ -37,6 +41,15 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedCharacters, setSelectedCharacters] = useState<string[]>([]);
   const [apiKey, setApiKey] = useState('');
+  const [comicState, setComicState] = useState<ComicState>({
+    settings: {
+      totalPages: 1,
+      panelsPerPage: 3,
+      title: '',
+    },
+    pages: [],
+    currentPage: 0,
+  });
 
   const generateScript = async () => {
     if (!theme || !keyElements || selectedCharacters.length === 0) {
@@ -76,17 +89,31 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
     }
   };
 
-  const generatePanelImage = async (panelIndex: number) => {
+  const handleSettingsChange = (newSettings: ComicSettings) => {
+    setComicState(prev => ({
+      ...prev,
+      settings: newSettings
+    }));
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setComicState(prev => ({
+      ...prev,
+      currentPage: newPage
+    }));
+  };
+
+  const handlePanelRegenerate = async (pageIndex: number, panelIndex: number) => {
     if (!script || !apiKey) {
-      toast.error('Please enter your Runware API key');
+      toast.error('Please generate a script first and ensure API key is set');
       return;
     }
-    
-    const panel = script.panels[panelIndex];
-    const selectedChars = characters.filter(char => panel.characters.includes(char.id));
-    const charDescriptions = selectedChars.map(char => char.description).join(', ');
-    
+
     try {
+      const panel = script.panels[panelIndex];
+      const selectedChars = characters.filter(char => panel.characters.includes(char.id));
+      const charDescriptions = selectedChars.map(char => char.description).join(', ');
+      
       const runwareService = new RunwareService(apiKey);
       const description = `Comic panel in ${tone} style: ${panel.scene}. Characters: ${charDescriptions}. Dialogue: ${panel.dialogue}. Highly detailed comic book art style, professional quality, dynamic composition.`;
       
@@ -95,74 +122,33 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
         CFGScale: 7,
         numberResults: 1,
       });
+
+      const updatedPages = [...comicState.pages];
+      if (updatedPages[pageIndex]) {
+        const updatedPanels = [...updatedPages[pageIndex].panels];
+        updatedPanels[panelIndex] = {
+          ...updatedPanels[panelIndex],
+          generatedImage: result.imageURL,
+        };
+        updatedPages[pageIndex].panels = updatedPanels;
+      }
+
+      setComicState(prev => ({
+        ...prev,
+        pages: updatedPages,
+      }));
       
-      const updatedPanels = [...script.panels];
-      updatedPanels[panelIndex] = {
-        ...panel,
-        generatedImage: result.imageURL,
-      };
-      
-      setScript({
-        ...script,
-        panels: updatedPanels,
-      });
-      
-      toast.success('Panel generated successfully!');
+      toast.success('Panel regenerated successfully!');
     } catch (error) {
-      toast.error('Failed to generate panel image');
+      toast.error('Failed to regenerate panel');
       console.error(error);
     }
-  };
-
-  const handlePanelsReorder = (newPanels: Panel[]) => {
-    if (!script) return;
-    setScript({
-      ...script,
-      panels: newPanels,
-    });
-    toast.success('Panels reordered');
-  };
-
-  const handleUpdatePanel = (index: number, updatedPanel: Panel) => {
-    if (!script) return;
-    const newPanels = [...script.panels];
-    newPanels[index] = updatedPanel;
-    setScript({
-      ...script,
-      panels: newPanels,
-    });
-  };
-
-  const handleDeletePanel = (index: number) => {
-    if (!script) return;
-    const newPanels = [...script.panels];
-    newPanels.splice(index, 1);
-    setScript({
-      ...script,
-      panels: newPanels,
-    });
-    toast.success('Panel deleted');
-  };
-
-  const addNewPanel = () => {
-    if (!script) return;
-    const newPanel: Panel = {
-      id: crypto.randomUUID(),
-      scene: '',
-      dialogue: '',
-      characters: selectedCharacters,
-    };
-    setScript({
-      ...script,
-      panels: [...script.panels, newPanel],
-    });
-    toast.success('New panel added');
   };
 
   return (
     <div className="space-y-6">
       <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-4">Story Generator</h2>
+        <h2 className="text-2xl font-bold mb-4">Comic Generator</h2>
         
         <div className="space-y-4">
           <div>
@@ -174,6 +160,11 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
               className="w-full px-3 py-2 border rounded-md mb-4"
             />
           </div>
+
+          <ComicSettings
+            settings={comicState.settings}
+            onSettingsChange={handleSettingsChange}
+          />
 
           <ScriptThemeInput
             theme={theme}
@@ -198,38 +189,67 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
             {isGenerating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating Script...
+                Generating Comic...
               </>
             ) : (
-              'Generate Script'
+              'Generate Comic'
             )}
           </Button>
         </div>
       </Card>
 
       {script && (
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold">Generated Script</h3>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={addNewPanel}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add Panel
-            </Button>
-          </div>
-          
-          <PanelList
-            panels={script.panels}
-            onPanelsReorder={handlePanelsReorder}
-            onRegeneratePanel={generatePanelImage}
-            onUpdatePanel={handleUpdatePanel}
-            onDeletePanel={handleDeletePanel}
-          />
-        </Card>
+        <>
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold">Comic Preview</h3>
+            </div>
+            
+            <ComicPreview
+              pages={comicState.pages}
+              currentPage={comicState.currentPage}
+              onPageChange={handlePageChange}
+              onPanelRegenerate={handlePanelRegenerate}
+            />
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold">Script & Panels</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (!script) return;
+                  const newPanel = {
+                    id: crypto.randomUUID(),
+                    scene: '',
+                    dialogue: '',
+                    characters: selectedCharacters,
+                  };
+                  const updatedPanels = [...script.panels, newPanel];
+                  setScript({
+                    ...script,
+                    panels: updatedPanels,
+                  });
+                  toast.success('New panel added');
+                }}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Panel
+              </Button>
+            </div>
+            
+            <PanelList
+              panels={script.panels}
+              onPanelsReorder={handlePanelsReorder}
+              onRegeneratePanel={generatePanelImage}
+              onUpdatePanel={handleUpdatePanel}
+              onDeletePanel={handleDeletePanel}
+            />
+          </Card>
+        </>
       )}
     </div>
   );
