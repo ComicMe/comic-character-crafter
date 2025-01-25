@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 import { Character } from '@/types/character';
 import ScriptThemeInput from './script/ScriptThemeInput';
 import CharacterSelection from './script/CharacterSelection';
@@ -27,7 +27,6 @@ interface Script {
 
 interface ScriptGeneratorProps {
   characters: Character[];
-  onGeneratePanel: (description: string) => Promise<string>;
 }
 
 const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
@@ -47,7 +46,6 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
 
     setIsGenerating(true);
     try {
-      // Here you would integrate with an AI service to generate the script
       const newScript: Script = {
         id: crypto.randomUUID(),
         theme,
@@ -56,13 +54,13 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
         panels: [
           {
             id: crypto.randomUUID(),
-            scene: 'Opening scene: ' + keyElements,
-            dialogue: 'Character: "Our adventure begins here!"',
+            scene: `Opening scene in ${keyElements}`,
+            dialogue: 'Character: "Our story begins..."',
             characters: selectedCharacters,
           },
           {
             id: crypto.randomUUID(),
-            scene: 'Action sequence in ' + keyElements,
+            scene: `Action sequence in ${keyElements}`,
             dialogue: 'Character: "We must hurry!"',
             characters: selectedCharacters,
           },
@@ -90,7 +88,7 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
     
     try {
       const runwareService = new RunwareService(apiKey);
-      const description = `Comic panel in ${tone} style: ${panel.scene}. Characters: ${charDescriptions}. Dialogue: ${panel.dialogue}`;
+      const description = `Comic panel in ${tone} style: ${panel.scene}. Characters: ${charDescriptions}. Dialogue: ${panel.dialogue}. Highly detailed comic book art style, professional quality, dynamic composition.`;
       
       const result = await runwareService.generateImage({
         positivePrompt: description,
@@ -108,6 +106,8 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
         ...script,
         panels: updatedPanels,
       });
+      
+      toast.success('Panel generated successfully!');
     } catch (error) {
       toast.error('Failed to generate panel image');
       console.error(error);
@@ -120,6 +120,43 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
       ...script,
       panels: newPanels,
     });
+    toast.success('Panels reordered');
+  };
+
+  const handleUpdatePanel = (index: number, updatedPanel: Panel) => {
+    if (!script) return;
+    const newPanels = [...script.panels];
+    newPanels[index] = updatedPanel;
+    setScript({
+      ...script,
+      panels: newPanels,
+    });
+  };
+
+  const handleDeletePanel = (index: number) => {
+    if (!script) return;
+    const newPanels = [...script.panels];
+    newPanels.splice(index, 1);
+    setScript({
+      ...script,
+      panels: newPanels,
+    });
+    toast.success('Panel deleted');
+  };
+
+  const addNewPanel = () => {
+    if (!script) return;
+    const newPanel: Panel = {
+      id: crypto.randomUUID(),
+      scene: '',
+      dialogue: '',
+      characters: selectedCharacters,
+    };
+    setScript({
+      ...script,
+      panels: [...script.panels, newPanel],
+    });
+    toast.success('New panel added');
   };
 
   return (
@@ -172,11 +209,25 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
 
       {script && (
         <Card className="p-6">
-          <h3 className="text-xl font-bold mb-4">Generated Script</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold">Generated Script</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={addNewPanel}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Panel
+            </Button>
+          </div>
+          
           <PanelList
             panels={script.panels}
             onPanelsReorder={handlePanelsReorder}
             onRegeneratePanel={generatePanelImage}
+            onUpdatePanel={handleUpdatePanel}
+            onDeletePanel={handleDeletePanel}
           />
         </Card>
       )}

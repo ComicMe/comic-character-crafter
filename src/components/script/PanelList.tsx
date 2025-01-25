@@ -1,7 +1,6 @@
 import React from 'react';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
-import { Button } from '../ui/button';
-import { RefreshCw } from 'lucide-react';
+import PanelEditor from './PanelEditor';
 
 interface Panel {
   id: string;
@@ -15,9 +14,17 @@ interface PanelListProps {
   panels: Panel[];
   onPanelsReorder: (panels: Panel[]) => void;
   onRegeneratePanel: (panelIndex: number) => void;
+  onUpdatePanel: (index: number, panel: Panel) => void;
+  onDeletePanel: (index: number) => void;
 }
 
-const PanelList = ({ panels, onPanelsReorder, onRegeneratePanel }: PanelListProps) => {
+const PanelList = ({
+  panels,
+  onPanelsReorder,
+  onRegeneratePanel,
+  onUpdatePanel,
+  onDeletePanel
+}: PanelListProps) => {
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;
 
@@ -48,29 +55,14 @@ const PanelList = ({ panels, onPanelsReorder, onRegeneratePanel }: PanelListProp
                     ref={provided.innerRef}
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
-                    className="border rounded-lg p-4 bg-background"
+                    className="bg-background"
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-semibold">Panel {index + 1}</h4>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onRegeneratePanel(index)}
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <p className="text-sm mb-2">{panel.scene}</p>
-                    <p className="text-sm italic mb-2">{panel.dialogue}</p>
-                    
-                    {panel.generatedImage && (
-                      <img
-                        src={panel.generatedImage}
-                        alt={`Panel ${index + 1}`}
-                        className="w-full h-48 object-cover rounded-md mt-2"
-                      />
-                    )}
+                    <PanelEditor
+                      panel={panel}
+                      onUpdate={(updatedPanel) => onUpdatePanel(index, updatedPanel)}
+                      onRegenerate={() => onRegeneratePanel(index)}
+                      onDelete={() => onDeletePanel(index)}
+                    />
                   </div>
                 )}
               </Draggable>
