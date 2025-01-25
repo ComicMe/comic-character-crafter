@@ -1,19 +1,12 @@
 import React from 'react';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import PanelEditor from './PanelEditor';
-
-interface Panel {
-  id: string;
-  scene: string;
-  dialogue: string;
-  characters: string[];
-  generatedImage?: string;
-}
+import { Panel } from '@/types/panel';
 
 interface PanelListProps {
   panels: Panel[];
   onPanelsReorder: (panels: Panel[]) => void;
-  onRegeneratePanel: (panelIndex: number) => void;
+  onRegeneratePanel: (pageIndex: number, panelIndex: number) => void;
   onUpdatePanel: (index: number, panel: Panel) => void;
   onDeletePanel: (index: number) => void;
 }
@@ -60,7 +53,7 @@ const PanelList = ({
                     <PanelEditor
                       panel={panel}
                       onUpdate={(updatedPanel) => onUpdatePanel(index, updatedPanel)}
-                      onRegenerate={() => onRegeneratePanel(index)}
+                      onRegenerate={() => onRegeneratePanel(0, index)} // Assuming first page for now
                       onDelete={() => onDeletePanel(index)}
                     />
                   </div>
