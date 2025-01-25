@@ -36,10 +36,24 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
       totalPages: 1,
       panelsPerPage: 3,
       title: '',
+      author: '',
     },
     pages: [],
     currentPage: 0,
   });
+
+  const handlePanelsReorder = (result: any) => {
+    if (!result.destination) return;
+    
+    const newPages = [...comicState.pages];
+    const [removed] = newPages[comicState.currentPage].panels.splice(result.source.index, 1);
+    newPages[comicState.currentPage].panels.splice(result.destination.index, 0, removed);
+    
+    setComicState(prev => ({
+      ...prev,
+      pages: newPages
+    }));
+  };
 
   const generateScript = async () => {
     if (!theme || !keyElements || selectedCharacters.length === 0) {
@@ -71,6 +85,21 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
       };
       setScript(newScript);
       
+      // Initialize comic pages
+      const newPages = [{
+        id: crypto.randomUUID(),
+        panels: newScript.panels.map(panel => ({
+          ...panel,
+          generatedImage: undefined,
+          dialogueSize: 16
+        }))
+      }];
+      
+      setComicState(prev => ({
+        ...prev,
+        pages: newPages
+      }));
+      
       // Save as new project
       const newProject = {
         id: crypto.randomUUID(),
@@ -78,7 +107,10 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
         createdAt: new Date(),
         updatedAt: new Date(),
         characters: characters.filter(char => selectedCharacters.includes(char.id)),
-        comicState,
+        comicState: {
+          ...comicState,
+          pages: newPages
+        },
         theme,
         tone,
         keyElements,
@@ -224,6 +256,9 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
               currentPage={comicState.currentPage}
               onPageChange={handlePageChange}
               onPanelRegenerate={handlePanelRegenerate}
+              onPanelsReorder={handlePanelsReorder}
+              title={comicState.settings.title || "Untitled Comic"}
+              author={comicState.settings.author}
             />
           </Card>
 

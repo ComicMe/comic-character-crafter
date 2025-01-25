@@ -30,8 +30,6 @@ export const generatePanelImage = async (
       positivePrompt: prompt,
       CFGScale: 7,
       numberResults: 1,
-      width: 1024,
-      height: 768,
     });
 
     return {
