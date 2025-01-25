@@ -1,23 +1,23 @@
 import React, { useState } from 'react';
-import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { toast } from 'sonner';
-import { Loader2, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { Button } from './ui/button';
 import { Character } from '@/types/character';
-import { ComicSettings as ComicSettingsType, ComicState, ComicPage } from '@/types/comic';
-import ScriptThemeInput from './script/ScriptThemeInput';
-import CharacterSelection from './script/CharacterSelection';
-import PanelList from './script/PanelList';
-import ComicSettingsComponent from './comic/ComicSettings';
-import ComicPreview from './comic/ComicPreview';
-import { RunwareService } from '@/services/runware';
+import { ComicSettings as ComicSettingsType, ComicState } from '@/types/comic';
 import { Panel } from '@/types/panel';
+import { RunwareService } from '@/services/runware';
+import { useProject } from '@/contexts/ProjectContext';
+import ScriptGenerationForm from './script/ScriptGenerationForm';
+import PanelList from './script/PanelList';
+import ComicPreview from './comic/ComicPreview';
 
 interface ScriptGeneratorProps {
   characters: Character[];
 }
 
 const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
+  const { addProject, updateProject } = useProject();
   const [theme, setTheme] = useState('');
   const [tone, setTone] = useState('adventure');
   const [keyElements, setKeyElements] = useState('');
@@ -70,7 +70,22 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
         ],
       };
       setScript(newScript);
-      toast.success('Script generated successfully!');
+      
+      // Save as new project
+      const newProject = {
+        id: crypto.randomUUID(),
+        title: comicState.settings.title || 'Untitled Comic',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        characters: characters.filter(char => selectedCharacters.includes(char.id)),
+        comicState,
+        theme,
+        tone,
+        keyElements,
+      };
+      addProject(newProject);
+      
+      toast.success('Script generated and project saved!');
     } catch (error) {
       toast.error('Failed to generate script');
       console.error(error);
@@ -143,11 +158,6 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
     });
   };
 
-  const generatePanelImage = async (panelIndex: number) => {
-    if (!script) return;
-    await handlePanelRegenerate(Math.floor(panelIndex / comicState.settings.panelsPerPage), panelIndex % comicState.settings.panelsPerPage);
-  };
-
   const handleUpdatePanel = (index: number, updatedPanel: Panel) => {
     if (!script) return;
     const updatedPanels = [...script.panels];
@@ -184,40 +194,21 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
             />
           </div>
 
-          <ComicSettingsComponent
-            settings={comicState.settings}
-            onSettingsChange={handleSettingsChange}
-          />
-
-          <ScriptThemeInput
+          <ScriptGenerationForm
             theme={theme}
             tone={tone}
             keyElements={keyElements}
+            selectedCharacters={selectedCharacters}
+            isGenerating={isGenerating}
+            comicSettings={comicState.settings}
+            characters={characters}
             onThemeChange={setTheme}
             onToneChange={setTone}
             onKeyElementsChange={setKeyElements}
-          />
-
-          <CharacterSelection
-            characters={characters}
-            selectedCharacters={selectedCharacters}
             onCharacterSelect={setSelectedCharacters}
+            onSettingsChange={handleSettingsChange}
+            onGenerate={generateScript}
           />
-
-          <Button
-            onClick={generateScript}
-            disabled={isGenerating}
-            className="w-full"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating Comic...
-              </>
-            ) : (
-              'Generate Comic'
-            )}
-          </Button>
         </div>
       </Card>
 
@@ -250,10 +241,9 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
                     dialogue: '',
                     characters: selectedCharacters,
                   };
-                  const updatedPanels = [...script.panels, newPanel];
                   setScript({
                     ...script,
-                    panels: updatedPanels,
+                    panels: [...script.panels, newPanel],
                   });
                   toast.success('New panel added');
                 }}
@@ -267,7 +257,7 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
             <PanelList
               panels={script.panels}
               onPanelsReorder={handlePanelsReorder}
-              onRegeneratePanel={generatePanelImage}
+              onRegeneratePanel={handlePanelRegenerate}
               onUpdatePanel={handleUpdatePanel}
               onDeletePanel={handleDeletePanel}
             />
