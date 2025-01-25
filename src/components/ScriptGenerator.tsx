@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card } from './ui/card';
 import { toast } from 'sonner';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Character } from '@/types/character';
 import { ComicSettings as ComicSettingsType, ComicState } from '@/types/comic';
@@ -29,8 +29,15 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
     panels: Panel[];
   } | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [regeneratingPanels, setRegeneratingPanels] = useState<{[key: string]: boolean}>({});
   const [selectedCharacters, setSelectedCharacters] = useState<string[]>([]);
   const [apiKey, setApiKey] = useState('');
+  const [formErrors, setFormErrors] = useState<{
+    theme?: string;
+    keyElements?: string;
+    characters?: string;
+    apiKey?: string;
+  }>({});
   const [comicState, setComicState] = useState<ComicState>({
     settings: {
       totalPages: 1,
@@ -42,11 +49,30 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
     currentPage: 0,
   });
 
+  const validateForm = () => {
+    const errors: typeof formErrors = {};
+    
+    if (!theme.trim()) {
+      errors.theme = 'Theme is required';
+    }
+    if (!keyElements.trim()) {
+      errors.keyElements = 'Key elements are required';
+    }
+    if (selectedCharacters.length === 0) {
+      errors.characters = 'At least one character must be selected';
+    }
+    if (!apiKey.trim()) {
+      errors.apiKey = 'Runware API key is required';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handlePanelsReorder = (result: any) => {
-    // Handle reordering in comic preview
+    if (!result.destination) return;
+    
     if (result.type === 'preview') {
-      if (!result.destination) return;
-      
       const newPages = [...comicState.pages];
       const [removed] = newPages[comicState.currentPage].panels.splice(result.source.index, 1);
       newPages[comicState.currentPage].panels.splice(result.destination.index, 0, removed);
@@ -55,9 +81,7 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
         ...prev,
         pages: newPages
       }));
-    }
-    // Handle reordering in script panels
-    else if (result.type === 'script' && script) {
+    } else if (result.type === 'script' && script) {
       const newPanels = [...script.panels];
       const [removed] = newPanels.splice(result.source.index, 1);
       newPanels.splice(result.destination.index, 0, removed);
@@ -70,8 +94,8 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
   };
 
   const generateScript = async () => {
-    if (!theme || !keyElements || selectedCharacters.length === 0) {
-      toast.error('Please fill in all required fields and select at least one character');
+    if (!validateForm()) {
+      toast.error('Please fix the form errors before generating');
       return;
     }
 
@@ -140,25 +164,14 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
     }
   };
 
-  const handleSettingsChange = (newSettings: ComicSettingsType) => {
-    setComicState(prev => ({
-      ...prev,
-      settings: newSettings
-    }));
-  };
-
-  const handlePageChange = (newPage: number) => {
-    setComicState(prev => ({
-      ...prev,
-      currentPage: newPage
-    }));
-  };
-
   const handlePanelRegenerate = async (pageIndex: number, panelIndex: number) => {
     if (!script || !apiKey) {
       toast.error('Please generate a script first and ensure API key is set');
       return;
     }
+
+    const panelId = script.panels[panelIndex].id;
+    setRegeneratingPanels(prev => ({ ...prev, [panelId]: true }));
 
     try {
       const panel = script.panels[panelIndex];
@@ -193,13 +206,38 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
     } catch (error) {
       toast.error('Failed to regenerate panel');
       console.error(error);
+    } finally {
+      setRegeneratingPanels(prev => ({ ...prev, [panelId]: false }));
     }
+  };
+
+  const handleSettingsChange = (newSettings: ComicSettingsType) => {
+    setComicState(prev => ({
+      ...prev,
+      settings: newSettings
+    }));
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setComicState(prev => ({
+      ...prev,
+      currentPage: newPage
+    }));
   };
 
   const handleUpdatePanel = (index: number, updatedPanel: Panel) => {
     if (!script) return;
     const updatedPanels = [...script.panels];
-    updatedPanels[index] = updatedPanel;
+    updatedPanels[index] = {
+      ...updatedPanel,
+      dialoguePosition: updatedPanel.dialoguePosition || { x: 10, y: 10 },
+      dialogueStyle: updatedPanel.dialogueStyle || {
+        fontSize: 16,
+        backgroundColor: 'white',
+        textColor: 'black',
+        opacity: 0.9,
+      }
+    };
     setScript({
       ...script,
       panels: updatedPanels
@@ -228,8 +266,13 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
               placeholder="Enter your Runware API key"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md mb-4"
+              className={`w-full px-3 py-2 border rounded-md mb-4 ${
+                formErrors.apiKey ? 'border-red-500' : ''
+              }`}
             />
+            {formErrors.apiKey && (
+              <p className="text-red-500 text-sm mt-1">{formErrors.apiKey}</p>
+            )}
           </div>
 
           <ScriptGenerationForm
@@ -240,6 +283,7 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
             isGenerating={isGenerating}
             comicSettings={comicState.settings}
             characters={characters}
+            formErrors={formErrors}
             onThemeChange={setTheme}
             onToneChange={setTone}
             onKeyElementsChange={setKeyElements}
@@ -262,9 +306,10 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
               currentPage={comicState.currentPage}
               onPageChange={handlePageChange}
               onPanelRegenerate={handlePanelRegenerate}
-              onPanelsReorder={(result) => handlePanelsReorder({ ...result, type: 'preview' })}
+              onPanelsReorder={handlePanelsReorder}
               title={comicState.settings.title || "Untitled Comic"}
               author={comicState.settings.author}
+              regeneratingPanels={regeneratingPanels}
             />
           </Card>
 
@@ -281,6 +326,13 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
                     scene: '',
                     dialogue: '',
                     characters: selectedCharacters,
+                    dialoguePosition: { x: 10, y: 10 },
+                    dialogueStyle: {
+                      fontSize: 16,
+                      backgroundColor: 'white',
+                      textColor: 'black',
+                      opacity: 0.9,
+                    }
                   };
                   setScript({
                     ...script,
@@ -297,10 +349,11 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
             
             <PanelList
               panels={script.panels}
-              onPanelsReorder={(result) => handlePanelsReorder({ ...result, type: 'script' })}
+              onPanelsReorder={handlePanelsReorder}
               onRegeneratePanel={handlePanelRegenerate}
               onUpdatePanel={handleUpdatePanel}
               onDeletePanel={handleDeletePanel}
+              regeneratingPanels={regeneratingPanels}
             />
           </Card>
         </>

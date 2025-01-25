@@ -16,6 +16,7 @@ interface ComicPreviewProps {
   onPanelsReorder: (result: any) => void;
   title: string;
   author?: string;
+  regeneratingPanels: {[key: string]: boolean};
 }
 
 const ComicPreview = ({
@@ -25,7 +26,8 @@ const ComicPreview = ({
   onPanelRegenerate,
   onPanelsReorder,
   title,
-  author
+  author,
+  regeneratingPanels
 }: ComicPreviewProps) => {
   const currentPageData = pages[currentPage];
 
@@ -34,10 +36,16 @@ const ComicPreview = ({
     if (!element) return;
 
     try {
-      const canvas = await html2canvas(element);
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+      
       const link = document.createElement('a');
       link.download = `${title || 'comic'}.jpg`;
-      link.href = canvas.toDataURL('image/jpeg');
+      link.href = canvas.toDataURL('image/jpeg', 0.9);
       link.click();
       toast.success('Comic exported as JPG successfully!');
     } catch (error) {
@@ -51,9 +59,9 @@ const ComicPreview = ({
     if (!element) return;
 
     try {
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdf = new jsPDF('p', 'mm', 'a4', true);
       
-      // Add cover page
+      // Add cover page with better formatting
       pdf.setFontSize(24);
       pdf.text(title, 105, 40, { align: 'center' });
       if (author) {
@@ -62,10 +70,20 @@ const ComicPreview = ({
       }
       pdf.addPage();
 
-      // Add comic pages
-      const canvas = await html2canvas(element);
-      const imgData = canvas.toDataURL('image/jpeg');
-      pdf.addImage(imgData, 'JPEG', 10, 10, 190, 277);
+      // Add comic pages with better quality
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+      
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      pdf.addImage(imgData, 'JPEG', 10, 10, pdfWidth - 20, pdfHeight - 20, undefined, 'FAST');
 
       pdf.save(`${title || 'comic'}.pdf`);
       toast.success('Comic exported as PDF successfully!');
@@ -134,6 +152,11 @@ const ComicPreview = ({
                           className="relative"
                         >
                           <div className="relative aspect-video">
+                            {regeneratingPanels[panel.id] ? (
+                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
+                                <Loader2 className="h-8 w-8 animate-spin text-white" />
+                              </div>
+                            ) : null}
                             {panel.generatedImage ? (
                               <img
                                 src={panel.generatedImage}
@@ -145,10 +168,21 @@ const ComicPreview = ({
                                 Panel {index + 1}
                               </div>
                             )}
-                            <div className="absolute bottom-4 left-4 right-4 bg-white/90 p-3 rounded-lg shadow-lg backdrop-blur-sm">
+                            <div 
+                              className="absolute rounded-lg shadow-lg backdrop-blur-sm"
+                              style={{
+                                top: `${panel.dialoguePosition?.y || 10}%`,
+                                left: `${panel.dialoguePosition?.x || 10}%`,
+                                backgroundColor: `${panel.dialogueStyle?.backgroundColor || 'white'}`,
+                                opacity: panel.dialogueStyle?.opacity || 0.9,
+                                padding: '0.75rem',
+                              }}
+                            >
                               <p 
-                                className="text-black"
-                                style={{ fontSize: `${panel.dialogueSize || 16}px` }}
+                                style={{ 
+                                  fontSize: `${panel.dialogueStyle?.fontSize || 16}px`,
+                                  color: panel.dialogueStyle?.textColor || 'black',
+                                }}
                               >
                                 {panel.dialogue}
                               </p>
@@ -159,8 +193,13 @@ const ComicPreview = ({
                             size="sm"
                             className="absolute top-2 right-2"
                             onClick={() => onPanelRegenerate(currentPage, index)}
+                            disabled={regeneratingPanels[panel.id]}
                           >
-                            Regenerate
+                            {regeneratingPanels[panel.id] ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              'Regenerate'
+                            )}
                           </Button>
                         </div>
                       )}
