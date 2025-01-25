@@ -11,7 +11,11 @@ import { Character } from '@/types/character';
 import CharacterList from './CharacterList';
 import { Plus } from 'lucide-react';
 
-const CharacterGenerator = () => {
+interface CharacterGeneratorProps {
+  onCharactersUpdate?: (characters: Character[]) => void;
+}
+
+const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpdate }) => {
   const [apiKey, setApiKey] = useState('');
   const [characters, setCharacters] = useState<Character[]>([]);
   const [currentCharacter, setCurrentCharacter] = useState<Character>({
@@ -76,11 +80,15 @@ const CharacterGenerator = () => {
       };
 
       if (isEditing) {
-        setCharacters(prev => prev.map(char => 
+        const updatedCharacters = characters.map(char => 
           char.id === currentCharacter.id ? updatedCharacter : char
-        ));
+        );
+        setCharacters(updatedCharacters);
+        onCharactersUpdate?.(updatedCharacters);
       } else {
-        setCharacters(prev => [...prev, updatedCharacter]);
+        const newCharacters = [...characters, updatedCharacter];
+        setCharacters(newCharacters);
+        onCharactersUpdate?.(newCharacters);
       }
 
       resetCurrentCharacter();
@@ -103,7 +111,9 @@ const CharacterGenerator = () => {
   };
 
   const handleDelete = (id: string) => {
-    setCharacters(prev => prev.filter(char => char.id !== id));
+    const updatedCharacters = characters.filter(char => char.id !== id);
+    setCharacters(updatedCharacters);
+    onCharactersUpdate?.(updatedCharacters);
     toast.success('Character deleted');
   };
 
