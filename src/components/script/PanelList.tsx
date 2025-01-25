@@ -5,6 +5,7 @@ import { Panel } from '@/types/panel';
 
 interface PanelListProps {
   panels: Panel[];
+  regeneratingPanels: {[key: string]: boolean};
   onPanelsReorder: (panels: Panel[]) => void;
   onRegeneratePanel: (pageIndex: number, panelIndex: number) => void;
   onUpdatePanel: (index: number, panel: Panel) => void;
@@ -13,6 +14,7 @@ interface PanelListProps {
 
 const PanelList = ({
   panels,
+  regeneratingPanels,
   onPanelsReorder,
   onRegeneratePanel,
   onUpdatePanel,
@@ -52,8 +54,9 @@ const PanelList = ({
                   >
                     <PanelEditor
                       panel={panel}
+                      isRegenerating={regeneratingPanels[panel.id]}
                       onUpdate={(updatedPanel) => onUpdatePanel(index, updatedPanel)}
-                      onRegenerate={() => onRegeneratePanel(0, index)} // Assuming first page for now
+                      onRegenerate={() => onRegeneratePanel(0, index)}
                       onDelete={() => onDeletePanel(index)}
                     />
                   </div>

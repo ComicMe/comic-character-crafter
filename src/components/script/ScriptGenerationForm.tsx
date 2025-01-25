@@ -15,6 +15,12 @@ interface ScriptGenerationFormProps {
   isGenerating: boolean;
   comicSettings: ComicSettings;
   characters: Character[];
+  formErrors?: {
+    theme?: string;
+    keyElements?: string;
+    characters?: string;
+    apiKey?: string;
+  };
   onThemeChange: (theme: string) => void;
   onToneChange: (tone: string) => void;
   onKeyElementsChange: (elements: string) => void;
@@ -31,6 +37,7 @@ const ScriptGenerationForm = ({
   isGenerating,
   comicSettings,
   characters,
+  formErrors = {},
   onThemeChange,
   onToneChange,
   onKeyElementsChange,
@@ -59,6 +66,10 @@ const ScriptGenerationForm = ({
         selectedCharacters={selectedCharacters}
         onCharacterSelect={onCharacterSelect}
       />
+
+      {Object.values(formErrors).map((error, index) => (
+        error && <p key={index} className="text-red-500 text-sm">{error}</p>
+      ))}
 
       <Button
         onClick={onGenerate}

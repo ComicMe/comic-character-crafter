@@ -3,27 +3,27 @@ import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
-import { RefreshCw, Trash2, Settings2 } from 'lucide-react';
+import { RefreshCw, Trash2, Settings2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import PanelCustomizer from './PanelCustomizer';
-import ScriptEditor from './ScriptEditor';
+import { Panel } from '@/types/panel';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
+import PanelCustomizer from './PanelCustomizer';
 
 interface PanelEditorProps {
-  panel: {
-    id: string;
-    scene: string;
-    dialogue: string;
-    characters: string[];
-    generatedImage?: string;
-    dialogueSize?: number;
-  };
-  onUpdate: (updatedPanel: any) => void;
+  panel: Panel;
+  isRegenerating: boolean;
+  onUpdate: (panel: Panel) => void;
   onRegenerate: () => void;
   onDelete: () => void;
 }
 
-const PanelEditor = ({ panel, onUpdate, onRegenerate, onDelete }: PanelEditorProps) => {
+const PanelEditor = ({
+  panel,
+  isRegenerating,
+  onUpdate,
+  onRegenerate,
+  onDelete
+}: PanelEditorProps) => {
   const [dialogueSize, setDialogueSize] = useState(panel.dialogueSize || 16);
 
   const handleDialogueSizeChange = (size: number) => {
@@ -34,25 +34,6 @@ const PanelEditor = ({ panel, onUpdate, onRegenerate, onDelete }: PanelEditorPro
     });
   };
 
-  const handleSceneChange = (scene: string) => {
-    onUpdate({
-      ...panel,
-      scene
-    });
-  };
-
-  const handleDialogueChange = (dialogue: string) => {
-    onUpdate({
-      ...panel,
-      dialogue
-    });
-  };
-
-  const handleRegenerate = () => {
-    onRegenerate();
-    toast.success('Regenerating panel...');
-  };
-
   return (
     <Card className="p-4 space-y-4">
       <div className="flex justify-between items-start">
@@ -60,7 +41,7 @@ const PanelEditor = ({ panel, onUpdate, onRegenerate, onDelete }: PanelEditorPro
           <Label>Scene Description</Label>
           <Textarea
             value={panel.scene}
-            onChange={(e) => handleSceneChange(e.target.value)}
+            onChange={(e) => onUpdate({ ...panel, scene: e.target.value })}
             placeholder="Describe the scene..."
             className="min-h-[100px]"
           />
@@ -81,7 +62,7 @@ const PanelEditor = ({ panel, onUpdate, onRegenerate, onDelete }: PanelEditorPro
                   panelId={panel.id}
                   dialogueSize={dialogueSize}
                   onDialogueSizeChange={handleDialogueSizeChange}
-                  onRegeneratePanel={handleRegenerate}
+                  onRegeneratePanel={onRegenerate}
                 />
               </div>
             </SheetContent>
@@ -89,10 +70,15 @@ const PanelEditor = ({ panel, onUpdate, onRegenerate, onDelete }: PanelEditorPro
           <Button
             variant="outline"
             size="icon"
-            onClick={handleRegenerate}
+            onClick={onRegenerate}
+            disabled={isRegenerating}
             title="Regenerate panel"
           >
-            <RefreshCw className="h-4 w-4" />
+            {isRegenerating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
           </Button>
           <Button
             variant="outline"
@@ -109,7 +95,7 @@ const PanelEditor = ({ panel, onUpdate, onRegenerate, onDelete }: PanelEditorPro
         <Label>Dialogue</Label>
         <Textarea
           value={panel.dialogue}
-          onChange={(e) => handleDialogueChange(e.target.value)}
+          onChange={(e) => onUpdate({ ...panel, dialogue: e.target.value })}
           placeholder="Enter character dialogue..."
           style={{ fontSize: `${dialogueSize}px` }}
         />

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
-import { ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
 import { ComicPage } from '@/types/comic';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { toast } from 'sonner';
