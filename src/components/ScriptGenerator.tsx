@@ -4,30 +4,14 @@ import { Card } from './ui/card';
 import { toast } from 'sonner';
 import { Loader2, Plus } from 'lucide-react';
 import { Character } from '@/types/character';
-import { ComicSettings, ComicState, ComicPage } from '@/types/comic';
+import { ComicSettings as ComicSettingsType, ComicState, ComicPage } from '@/types/comic';
 import ScriptThemeInput from './script/ScriptThemeInput';
 import CharacterSelection from './script/CharacterSelection';
 import PanelList from './script/PanelList';
-import ComicSettings from './comic/ComicSettings';
+import ComicSettingsComponent from './comic/ComicSettings';
 import ComicPreview from './comic/ComicPreview';
 import { RunwareService } from '@/services/runware';
-
-interface Panel {
-  id: string;
-  scene: string;
-  dialogue: string;
-  characters: string[];
-  generatedImage?: string;
-  dialogueSize?: number;
-}
-
-interface Script {
-  id: string;
-  theme: string;
-  tone: string;
-  keyElements: string;
-  panels: Panel[];
-}
+import { Panel } from '@/types/panel';
 
 interface ScriptGeneratorProps {
   characters: Character[];
@@ -37,7 +21,13 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
   const [theme, setTheme] = useState('');
   const [tone, setTone] = useState('adventure');
   const [keyElements, setKeyElements] = useState('');
-  const [script, setScript] = useState<Script | null>(null);
+  const [script, setScript] = useState<{
+    id: string;
+    theme: string;
+    tone: string;
+    keyElements: string;
+    panels: Panel[];
+  } | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedCharacters, setSelectedCharacters] = useState<string[]>([]);
   const [apiKey, setApiKey] = useState('');
@@ -59,7 +49,7 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
 
     setIsGenerating(true);
     try {
-      const newScript: Script = {
+      const newScript = {
         id: crypto.randomUUID(),
         theme,
         tone,
@@ -89,7 +79,7 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
     }
   };
 
-  const handleSettingsChange = (newSettings: ComicSettings) => {
+  const handleSettingsChange = (newSettings: ComicSettingsType) => {
     setComicState(prev => ({
       ...prev,
       settings: newSettings
@@ -145,6 +135,39 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
     }
   };
 
+  const handlePanelsReorder = (newPanels: Panel[]) => {
+    if (!script) return;
+    setScript({
+      ...script,
+      panels: newPanels
+    });
+  };
+
+  const generatePanelImage = async (panelIndex: number) => {
+    if (!script) return;
+    await handlePanelRegenerate(Math.floor(panelIndex / comicState.settings.panelsPerPage), panelIndex % comicState.settings.panelsPerPage);
+  };
+
+  const handleUpdatePanel = (index: number, updatedPanel: Panel) => {
+    if (!script) return;
+    const updatedPanels = [...script.panels];
+    updatedPanels[index] = updatedPanel;
+    setScript({
+      ...script,
+      panels: updatedPanels
+    });
+  };
+
+  const handleDeletePanel = (index: number) => {
+    if (!script) return;
+    const updatedPanels = script.panels.filter((_, i) => i !== index);
+    setScript({
+      ...script,
+      panels: updatedPanels
+    });
+    toast.success('Panel deleted');
+  };
+
   return (
     <div className="space-y-6">
       <Card className="p-6">
@@ -161,7 +184,7 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
             />
           </div>
 
-          <ComicSettings
+          <ComicSettingsComponent
             settings={comicState.settings}
             onSettingsChange={handleSettingsChange}
           />

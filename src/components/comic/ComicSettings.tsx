@@ -2,14 +2,14 @@ import React from 'react';
 import { Card } from '../ui/card';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
-import { ComicSettings } from '@/types/comic';
+import type { ComicSettings } from '@/types/comic';
 
 interface ComicSettingsProps {
   settings: ComicSettings;
   onSettingsChange: (settings: ComicSettings) => void;
 }
 
-const ComicSettings = ({ settings, onSettingsChange }: ComicSettingsProps) => {
+const ComicSettingsComponent = ({ settings, onSettingsChange }: ComicSettingsProps) => {
   const handleChange = (field: keyof ComicSettings, value: string | number) => {
     onSettingsChange({
       ...settings,
@@ -66,4 +66,4 @@ const ComicSettings = ({ settings, onSettingsChange }: ComicSettingsProps) => {
   );
 };
 
-export default ComicSettings;
+export default ComicSettingsComponent;

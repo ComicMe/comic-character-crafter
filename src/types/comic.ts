@@ -1,3 +1,5 @@
+import { Panel } from './panel';
+
 export interface ComicPage {
   id: string;
   panels: Panel[];
