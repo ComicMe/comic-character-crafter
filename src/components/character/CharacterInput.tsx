@@ -30,58 +30,73 @@ const CharacterInput = ({ character, onCharacterUpdate }: CharacterInputProps) =
   };
 
   return (
-    <Tabs defaultValue="description" className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="description">Text Description</TabsTrigger>
-        <TabsTrigger value="image">Reference Image</TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="description">
-        <div className="space-y-2">
-          <Label>Character Description</Label>
-          <Textarea
-            placeholder="Describe your character (e.g., 'a brave young girl with curly red hair and glasses')"
-            value={character.description}
-            onChange={(e) => onCharacterUpdate({
-              ...character,
-              description: e.target.value
-            })}
-            className="min-h-[100px]"
-          />
-        </div>
-      </TabsContent>
-      
-      <TabsContent value="image">
-        <div className="space-y-2">
-          <Label>Upload Reference Image</Label>
-          <Input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="cursor-pointer"
-          />
-          {character.referenceImage && (
-            <div className="mt-4">
-              <p className="text-sm text-muted-foreground mb-2">Reference Image Preview:</p>
-              <img 
-                src={character.referenceImage} 
-                alt="Reference" 
-                className="max-h-[200px] rounded-lg border"
-              />
-            </div>
-          )}
-          <Textarea
-            placeholder="Optional: Add additional details or modifications to the reference image"
-            value={character.description}
-            onChange={(e) => onCharacterUpdate({
-              ...character,
-              description: e.target.value
-            })}
-            className="mt-4"
-          />
-        </div>
-      </TabsContent>
-    </Tabs>
+    <div className="space-y-4">
+      <div>
+        <Label>Character Name</Label>
+        <Input
+          value={character.name}
+          onChange={(e) => onCharacterUpdate({
+            ...character,
+            name: e.target.value
+          })}
+          placeholder="Enter character name"
+          className="mt-1"
+        />
+      </div>
+
+      <Tabs defaultValue="description" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="description">Text Description</TabsTrigger>
+          <TabsTrigger value="image">Reference Image</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="description">
+          <div className="space-y-2">
+            <Label>Character Description</Label>
+            <Textarea
+              placeholder="Describe your character (e.g., 'a brave young girl with curly red hair and glasses')"
+              value={character.description}
+              onChange={(e) => onCharacterUpdate({
+                ...character,
+                description: e.target.value
+              })}
+              className="min-h-[100px]"
+            />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="image">
+          <div className="space-y-2">
+            <Label>Upload Reference Image</Label>
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="cursor-pointer"
+            />
+            {character.referenceImage && (
+              <div className="mt-4">
+                <p className="text-sm text-muted-foreground mb-2">Reference Image Preview:</p>
+                <img 
+                  src={character.referenceImage} 
+                  alt="Reference" 
+                  className="max-h-[200px] rounded-lg border"
+                />
+              </div>
+            )}
+            <Textarea
+              placeholder="Optional: Add additional details or modifications to the reference image"
+              value={character.description}
+              onChange={(e) => onCharacterUpdate({
+                ...character,
+                description: e.target.value
+              })}
+              className="mt-4"
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

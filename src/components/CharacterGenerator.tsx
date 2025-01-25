@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { toast } from 'sonner';
 import { RunwareService } from '@/services/runware';
 import { Label } from './ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Character } from '@/types/character';
 import CharacterList from './CharacterList';
+import CharacterInput from './character/CharacterInput';
 import { Plus } from 'lucide-react';
 
 interface CharacterGeneratorProps {
@@ -20,33 +19,20 @@ const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpd
   const [characters, setCharacters] = useState<Character[]>([]);
   const [currentCharacter, setCurrentCharacter] = useState<Character>({
     id: crypto.randomUUID(),
+    name: '',
     description: '',
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image size should be less than 5MB');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setCurrentCharacter(prev => ({
-          ...prev,
-          referenceImage: e.target?.result as string
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const handleImageGeneration = async () => {
     if (!apiKey) {
       toast.error('Please enter your Runware API key');
+      return;
+    }
+
+    if (!currentCharacter.name) {
+      toast.error('Please provide a character name');
       return;
     }
 
@@ -61,9 +47,9 @@ const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpd
     try {
       let prompt = currentCharacter.description;
       if (currentCharacter.referenceImage) {
-        prompt = `Transform this reference image into a comic book style character. ${currentCharacter.description ? 'Additional details: ' + currentCharacter.description : ''}`;
+        prompt = `Transform this reference image into a comic book style character named ${currentCharacter.name}. ${currentCharacter.description ? 'Additional details: ' + currentCharacter.description : ''}`;
       } else {
-        prompt = `Create a comic book style character: ${currentCharacter.description}. Highly detailed, professional comic art style, full body shot, clean lines, vibrant colors.`;
+        prompt = `Create a comic book style character named ${currentCharacter.name}: ${currentCharacter.description}. Highly detailed, professional comic art style, full body shot, clean lines, vibrant colors.`;
       }
       
       const result = await runwareService.generateImage({
@@ -117,18 +103,10 @@ const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpd
     toast.success('Character deleted');
   };
 
-  const handleRegenerate = async (id: string) => {
-    const character = characters.find(char => char.id === id);
-    if (character) {
-      setCurrentCharacter(character);
-      setIsEditing(true);
-      await handleImageGeneration();
-    }
-  };
-
   const resetCurrentCharacter = () => {
     setCurrentCharacter({
       id: crypto.randomUUID(),
+      name: '',
       description: '',
     });
   };
@@ -150,58 +128,10 @@ const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpd
               />
             </div>
 
-            <Tabs defaultValue="description" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="description">Text Description</TabsTrigger>
-                <TabsTrigger value="image">Reference Image</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="description">
-                <div className="space-y-2">
-                  <Label>Character Description</Label>
-                  <Textarea
-                    placeholder="Describe your character (e.g., 'a brave young girl with curly red hair and glasses')"
-                    value={currentCharacter.description}
-                    onChange={(e) => setCurrentCharacter(prev => ({
-                      ...prev,
-                      description: e.target.value
-                    }))}
-                    className="min-h-[100px]"
-                  />
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="image">
-                <div className="space-y-2">
-                  <Label>Upload Reference Image</Label>
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="cursor-pointer"
-                  />
-                  {currentCharacter.referenceImage && (
-                    <div className="mt-4">
-                      <p className="text-sm text-muted-foreground mb-2">Reference Image Preview:</p>
-                      <img 
-                        src={currentCharacter.referenceImage} 
-                        alt="Reference" 
-                        className="max-h-[200px] rounded-lg border"
-                      />
-                    </div>
-                  )}
-                  <Textarea
-                    placeholder="Optional: Add additional details or modifications to the reference image"
-                    value={currentCharacter.description}
-                    onChange={(e) => setCurrentCharacter(prev => ({
-                      ...prev,
-                      description: e.target.value
-                    }))}
-                    className="mt-4"
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
+            <CharacterInput
+              character={currentCharacter}
+              onCharacterUpdate={setCurrentCharacter}
+            />
 
             <div className="flex gap-4">
               <Button 
@@ -242,7 +172,6 @@ const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpd
             characters={characters}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            onRegenerate={handleRegenerate}
             isGenerating={isGenerating}
           />
         </div>
