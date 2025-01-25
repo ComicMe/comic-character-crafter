@@ -11,12 +11,6 @@ const Index = () => {
     setCharacters(updatedCharacters);
   };
 
-  const handlePanelGeneration = async (description: string) => {
-    // This would integrate with your image generation service
-    // For now, we'll return a placeholder
-    return "https://via.placeholder.com/400x300";
-  };
-
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold text-center mb-6">Comic Creator Studio</h1>
@@ -32,10 +26,7 @@ const Index = () => {
         </TabsContent>
 
         <TabsContent value="script">
-          <ScriptGenerator
-            characters={characters}
-            onGeneratePanel={handlePanelGeneration}
-          />
+          <ScriptGenerator characters={characters} />
         </TabsContent>
       </Tabs>
     </div>
