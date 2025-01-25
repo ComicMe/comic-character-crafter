@@ -8,19 +8,23 @@ import PanelList from './PanelList';
 interface PanelManagerProps {
   panels: Panel[];
   selectedCharacters: string[];
+  regeneratingPanels: {[key: string]: boolean};
   onPanelsReorder: (panels: Panel[]) => void;
   onPanelUpdate: (index: number, panel: Panel) => void;
   onPanelDelete: (index: number) => void;
   onPanelAdd: () => void;
+  onRegeneratePanel: (pageIndex: number, panelIndex: number) => void;
 }
 
 const PanelManager: React.FC<PanelManagerProps> = ({
   panels,
   selectedCharacters,
+  regeneratingPanels,
   onPanelsReorder,
   onPanelUpdate,
   onPanelDelete,
   onPanelAdd,
+  onRegeneratePanel,
 }) => {
   return (
     <Card className="p-6">
@@ -39,8 +43,9 @@ const PanelManager: React.FC<PanelManagerProps> = ({
       
       <PanelList
         panels={panels}
+        regeneratingPanels={regeneratingPanels}
         onPanelsReorder={onPanelsReorder}
-        onRegeneratePanel={() => {}} // This will be implemented in the parent
+        onRegeneratePanel={onRegeneratePanel}
         onUpdatePanel={onPanelUpdate}
         onDeletePanel={onPanelDelete}
       />
