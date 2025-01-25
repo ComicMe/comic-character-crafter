@@ -25,12 +25,36 @@ const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpd
   const [isGenerating, setIsGenerating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleImageGeneration = async () => {
+  const generateCharacterImage = async (character: Character) => {
     if (!apiKey) {
       toast.error('Please enter your Runware API key');
-      return;
+      return null;
     }
 
+    const runwareService = new RunwareService(apiKey);
+    let prompt = character.description;
+    
+    if (character.referenceImage) {
+      prompt = `Transform this reference image into a comic book style character named ${character.name}. ${character.description ? 'Additional details: ' + character.description : ''}`;
+    } else {
+      prompt = `Create a comic book style character named ${character.name}: ${character.description}. Highly detailed, professional comic art style, full body shot, clean lines, vibrant colors.`;
+    }
+    
+    const result = await runwareService.generateImage({
+      positivePrompt: prompt,
+      seed: character.seed,
+      CFGScale: 7,
+      numberResults: 1,
+    });
+
+    return {
+      ...character,
+      generatedImage: result.imageURL,
+      seed: result.seed,
+    };
+  };
+
+  const handleImageGeneration = async () => {
     if (!currentCharacter.name) {
       toast.error('Please provide a character name');
       return;
@@ -42,39 +66,22 @@ const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpd
     }
 
     setIsGenerating(true);
-    const runwareService = new RunwareService(apiKey);
 
     try {
-      let prompt = currentCharacter.description;
-      if (currentCharacter.referenceImage) {
-        prompt = `Transform this reference image into a comic book style character named ${currentCharacter.name}. ${currentCharacter.description ? 'Additional details: ' + currentCharacter.description : ''}`;
-      } else {
-        prompt = `Create a comic book style character named ${currentCharacter.name}: ${currentCharacter.description}. Highly detailed, professional comic art style, full body shot, clean lines, vibrant colors.`;
-      }
+      const updatedCharacter = await generateCharacterImage(currentCharacter);
       
-      const result = await runwareService.generateImage({
-        positivePrompt: prompt,
-        seed: currentCharacter.seed,
-        CFGScale: 7,
-        numberResults: 1,
-      });
-
-      const updatedCharacter = {
-        ...currentCharacter,
-        generatedImage: result.imageURL,
-        seed: result.seed,
-      };
-
-      if (isEditing) {
-        const updatedCharacters = characters.map(char => 
-          char.id === currentCharacter.id ? updatedCharacter : char
-        );
-        setCharacters(updatedCharacters);
-        onCharactersUpdate?.(updatedCharacters);
-      } else {
-        const newCharacters = [...characters, updatedCharacter];
-        setCharacters(newCharacters);
-        onCharactersUpdate?.(newCharacters);
+      if (updatedCharacter) {
+        if (isEditing) {
+          const updatedCharacters = characters.map(char => 
+            char.id === currentCharacter.id ? updatedCharacter : char
+          );
+          setCharacters(updatedCharacters);
+          onCharactersUpdate?.(updatedCharacters);
+        } else {
+          const newCharacters = [...characters, updatedCharacter];
+          setCharacters(newCharacters);
+          onCharactersUpdate?.(newCharacters);
+        }
       }
 
       resetCurrentCharacter();
@@ -101,6 +108,29 @@ const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpd
     setCharacters(updatedCharacters);
     onCharactersUpdate?.(updatedCharacters);
     toast.success('Character deleted');
+  };
+
+  const handleRegenerate = async (id: string) => {
+    const character = characters.find(char => char.id === id);
+    if (!character) return;
+
+    setIsGenerating(true);
+    try {
+      const updatedCharacter = await generateCharacterImage(character);
+      if (updatedCharacter) {
+        const updatedCharacters = characters.map(char => 
+          char.id === id ? updatedCharacter : char
+        );
+        setCharacters(updatedCharacters);
+        onCharactersUpdate?.(updatedCharacters);
+        toast.success('Character regenerated successfully!');
+      }
+    } catch (error) {
+      toast.error('Failed to regenerate character. Please try again.');
+      console.error('Regeneration error:', error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const resetCurrentCharacter = () => {
@@ -172,6 +202,7 @@ const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpd
             characters={characters}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onRegenerate={handleRegenerate}
             isGenerating={isGenerating}
           />
         </div>
