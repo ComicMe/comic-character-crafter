@@ -33,6 +33,86 @@ export type Database = {
         }
         Relationships: []
       }
+      comics: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key_elements: string | null
+          theme: string | null
+          title: string
+          tone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key_elements?: string | null
+          theme?: string | null
+          title: string
+          tone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key_elements?: string | null
+          theme?: string | null
+          title?: string
+          tone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      panels: {
+        Row: {
+          comic_id: string | null
+          created_at: string
+          dialogue: string | null
+          dialogue_position: Json | null
+          dialogue_style: Json | null
+          id: string
+          image_url: string | null
+          scene_description: string | null
+          sequence_number: number | null
+        }
+        Insert: {
+          comic_id?: string | null
+          created_at?: string
+          dialogue?: string | null
+          dialogue_position?: Json | null
+          dialogue_style?: Json | null
+          id?: string
+          image_url?: string | null
+          scene_description?: string | null
+          sequence_number?: number | null
+        }
+        Update: {
+          comic_id?: string | null
+          created_at?: string
+          dialogue?: string | null
+          dialogue_position?: Json | null
+          dialogue_style?: Json | null
+          id?: string
+          image_url?: string | null
+          scene_description?: string | null
+          sequence_number?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "panels_comic_id_fkey"
+            columns: ["comic_id"]
+            isOneToOne: false
+            referencedRelation: "comics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
