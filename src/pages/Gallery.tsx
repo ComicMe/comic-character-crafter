@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { useProject } from "@/contexts/ProjectContext";
 
@@ -11,7 +12,9 @@ const Gallery = () => {
         {projects.map((project) => (
           <Card key={project.id} className="p-4">
             <h2 className="text-xl font-bold mb-2">{project.title}</h2>
-            <p className="text-muted-foreground">{project.description}</p>
+            <p className="text-muted-foreground">
+              Created: {new Date(project.createdAt).toLocaleDateString()}
+            </p>
           </Card>
         ))}
       </div>

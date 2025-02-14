@@ -1,6 +1,7 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, PaintBrush, Image } from "lucide-react";
+import { BookOpen, Paintbrush, Image } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Index = () => {
@@ -29,7 +30,7 @@ const Index = () => {
           <Card className="bg-card/50 backdrop-blur">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <PaintBrush className="w-6 h-6" />
+                <Paintbrush className="w-6 h-6" />
                 Character Creation
               </CardTitle>
             </CardHeader>
