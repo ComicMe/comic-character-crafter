@@ -15,7 +15,7 @@ interface CharacterGeneratorProps {
 }
 
 const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpdate }) => {
-  const [apiKey, setApiKey] = useState('');
+  // const [apiKey, setApiKey] = useState('');
   const [characters, setCharacters] = useState<Character[]>([]);
   const [currentCharacter, setCurrentCharacter] = useState<Character>({
     id: crypto.randomUUID(),
@@ -24,7 +24,11 @@ const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpd
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  console.log(import.meta.env);
 
+  const apiKey = import.meta.env.VITE_API_KEY
+  console.log(apiKey);
+  
   const generateCharacterImage = async (character: Character) => {
     if (!apiKey) {
       toast.error('Please enter your Runware API key');
@@ -33,13 +37,13 @@ const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpd
 
     const runwareService = new RunwareService(apiKey);
     let prompt = character.description;
-    
+
     if (character.referenceImage) {
       prompt = `Transform this reference image into a comic book style character named ${character.name}. ${character.description ? 'Additional details: ' + character.description : ''}`;
     } else {
       prompt = `Create a comic book style character named ${character.name}: ${character.description}. Highly detailed, professional comic art style, full body shot, clean lines, vibrant colors.`;
     }
-    
+
     const result = await runwareService.generateImage({
       positivePrompt: prompt,
       seed: character.seed,
@@ -69,10 +73,10 @@ const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpd
 
     try {
       const updatedCharacter = await generateCharacterImage(currentCharacter);
-      
+
       if (updatedCharacter) {
         if (isEditing) {
-          const updatedCharacters = characters.map(char => 
+          const updatedCharacters = characters.map(char =>
             char.id === currentCharacter.id ? updatedCharacter : char
           );
           setCharacters(updatedCharacters);
@@ -118,7 +122,7 @@ const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpd
     try {
       const updatedCharacter = await generateCharacterImage(character);
       if (updatedCharacter) {
-        const updatedCharacters = characters.map(char => 
+        const updatedCharacters = characters.map(char =>
           char.id === id ? updatedCharacter : char
         );
         setCharacters(updatedCharacters);
@@ -146,17 +150,17 @@ const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpd
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="p-6 space-y-6">
           <h1 className="text-3xl font-bold text-center mb-6">Comic Character Generator</h1>
-          
+
           <div className="space-y-4">
-            <div>
-              <Label className="block text-sm font-medium mb-2">Runware API Key</Label>
+            {/* <div> */}
+            {/* <Label className="block text-sm font-medium mb-2">Runware API Key</Label>
               <Input
                 type="password"
                 placeholder="Enter your Runware API key"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
               />
-            </div>
+            </div> */}
 
             <CharacterInput
               character={currentCharacter}
@@ -164,16 +168,16 @@ const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpd
             />
 
             <div className="flex gap-4">
-              <Button 
-                onClick={handleImageGeneration} 
+              <Button
+                onClick={handleImageGeneration}
                 disabled={isGenerating}
                 className="flex-1"
               >
                 {isGenerating ? 'Generating...' : isEditing ? 'Update Character' : 'Generate Character'}
               </Button>
-              
+
               {isEditing && (
-                <Button 
+                <Button
                   onClick={resetCurrentCharacter}
                   variant="outline"
                 >
@@ -197,7 +201,7 @@ const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpd
               New Character
             </Button>
           </div>
-          
+
           <CharacterList
             characters={characters}
             onEdit={handleEdit}
