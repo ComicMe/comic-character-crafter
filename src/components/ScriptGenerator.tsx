@@ -11,6 +11,7 @@ import { useProject } from '@/contexts/ProjectContext';
 import ScriptGenerationForm from './script/ScriptGenerationForm';
 import PanelList from './script/PanelList';
 import ComicPreview from './comic/ComicPreview';
+import { createComics } from '@/services/api-utils';
 
 interface ScriptGeneratorProps {
   characters: Character[];
@@ -24,6 +25,8 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
   const [script, setScript] = useState<{
     id: string;
     theme: string;
+    title : string,
+    story : string
     tone: string;
     keyElements: string;
     panels: Panel[];
@@ -31,12 +34,10 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [regeneratingPanels, setRegeneratingPanels] = useState<{[key: string]: boolean}>({});
   const [selectedCharacters, setSelectedCharacters] = useState<string[]>([]);
-  const [apiKey, setApiKey] = useState('');
   const [formErrors, setFormErrors] = useState<{
     theme?: string;
     keyElements?: string;
     characters?: string;
-    apiKey?: string;
   }>({});
   const [comicState, setComicState] = useState<ComicState>({
     settings: {
@@ -48,7 +49,7 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
     pages: [],
     currentPage: 0,
   });
-
+  const apiKey = import.meta.env.VITE_API_KEY
   const validateForm = () => {
     const errors: typeof formErrors = {};
     
@@ -61,9 +62,7 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
     if (selectedCharacters.length === 0) {
       errors.characters = 'At least one character must be selected';
     }
-    if (!apiKey.trim()) {
-      errors.apiKey = 'Runware API key is required';
-    }
+  
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -101,34 +100,32 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
 
     setIsGenerating(true);
     try {
+      
       const newScript = {
-        id: crypto.randomUUID(),
         theme,
-        tone,
-        keyElements,
-        panels: [
-          {
-            id: crypto.randomUUID(),
-            scene: `Opening scene in ${keyElements}`,
-            dialogue: 'Character: "Our story begins..."',
-            characters: selectedCharacters,
-          },
-          {
-            id: crypto.randomUUID(),
-            scene: `Action sequence in ${keyElements}`,
-            dialogue: 'Character: "We must hurry!"',
-            characters: selectedCharacters,
-          },
-        ],
+        title: comicState.settings.title || 'Untitled Comic',
+        genre : tone,
+        storydetails : keyElements,
+        characters: selectedCharacters,
+        nbPanelsPerPage : comicState.settings.panelsPerPage,
+        nbPages :comicState.settings.totalPages,
+        author : comicState.settings.author,
+
+        
       };
-      setScript(newScript);
+      const response = await createComics(newScript)
+      if(response){
+        console.log(response);
+        
+        setScript(response);
+      }
+      
       
       // Initialize comic pages
       const newPages = [{
         id: crypto.randomUUID(),
-        panels: newScript.panels.map(panel => ({
+        panels: script.panels?.map(panel => ({
           ...panel,
-          generatedImage: undefined,
           dialogueSize: 16
         }))
       }];
@@ -140,7 +137,7 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
       
       // Save as new project
       const newProject = {
-        id: crypto.randomUUID(),
+        id: script.id,
         title: comicState.settings.title || 'Untitled Comic',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -260,20 +257,7 @@ const ScriptGenerator: React.FC<ScriptGeneratorProps> = ({ characters }) => {
         <h2 className="text-2xl font-bold mb-4">Comic Generator</h2>
         
         <div className="space-y-4">
-          <div>
-            <input
-              type="password"
-              placeholder="Enter your Runware API key"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md mb-4 ${
-                formErrors.apiKey ? 'border-red-500' : ''
-              }`}
-            />
-            {formErrors.apiKey && (
-              <p className="text-red-500 text-sm mt-1">{formErrors.apiKey}</p>
-            )}
-          </div>
+         
 
           <ScriptGenerationForm
             theme={theme}
