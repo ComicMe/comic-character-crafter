@@ -6,7 +6,7 @@ const baseUrl = () => {
         return "http://localhost:8000/"
     }
     if (process.env.NODE_ENV === "production") {
-        return "https://api.mara.group/"
+        return "https://comic-8dve.onrender.com/"
     }
 }
 export const API_BASE_URL = baseUrl()

@@ -20,12 +20,12 @@ const CharacterSelection = ({
         {characters.map((char) => (
           <Button
             key={char.id}
-            variant={selectedCharacters.includes(char.id) ? "default" : "outline"}
+            variant={selectedCharacters.includes(char.generatedImage) ? "default" : "outline"}
             onClick={() => {
               onCharacterSelect(
-                selectedCharacters.includes(char.id)
-                  ? selectedCharacters.filter(id => id !== char.id)
-                  : [...selectedCharacters, char.id]
+                selectedCharacters.includes(char.generatedImage)
+                  ? selectedCharacters.filter(generatedImage => generatedImage !== char.generatedImage)
+                  : [...selectedCharacters, char.generatedImage]
               );
             }}
             className="flex items-center gap-2"

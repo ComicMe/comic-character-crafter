@@ -29,6 +29,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     
     if (savedProjects) {
       setProjects(JSON.parse(savedProjects));
+      
     }
     if (savedCharacters) {
       setCharacters(JSON.parse(savedCharacters));

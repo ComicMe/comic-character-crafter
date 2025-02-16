@@ -157,15 +157,15 @@ const ComicPreview = ({
                                 <Loader2 className="h-8 w-8 animate-spin text-white" />
                               </div>
                             ) : null}
-                            {panel.generatedImage ? (
+                            {panel.scenesImage ? (
                               <img
-                                src={panel.generatedImage}
+                                src={panel.scenesImage}
                                 alt={`Panel ${index + 1}`}
                                 className="w-full h-full object-cover rounded-lg"
                               />
                             ) : (
                               <div className="w-full h-full bg-muted flex items-center justify-center rounded-lg">
-                                Panel {index + 1}
+                                 {panel.text}
                               </div>
                             )}
                             <div 
@@ -184,7 +184,7 @@ const ComicPreview = ({
                                   color: panel.dialogueStyle?.textColor || 'black',
                                 }}
                               >
-                                {panel.dialogue}
+                                {panel.text}
                               </p>
                             </div>
                           </div>

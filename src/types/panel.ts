@@ -11,6 +11,8 @@ export interface Position {
 }
 
 export interface Panel {
+  scenesImage?: string;
+  text ? : string;
   id: string;
   scene: string;
   dialogue: string;

@@ -24,10 +24,8 @@ const CharacterGenerator: React.FC<CharacterGeneratorProps> = ({ onCharactersUpd
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  console.log(import.meta.env);
 
   const apiKey = import.meta.env.VITE_API_KEY
-  console.log(apiKey);
   
   const generateCharacterImage = async (character: Character) => {
     if (!apiKey) {
